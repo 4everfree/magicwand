@@ -56,17 +56,18 @@ if __name__ == '__main__':
     m3u8_url = sys.argv[1]
     num_threads = int(sys.argv[2])
     download_path = sys.argv[3]
+    video_urls = []
 
     if (not os.path.exists(download_path)):
         os.makedirs(download_path, exist_ok=True)
-        video_urls = []
         if(m3u8_url.endswith('m3u8')):
             video_urls = parse_m3u8(m3u8_url)
         else:
             video_urls = parse_m3u(m3u8_url)
-
         with ThreadPoolExecutor(max_workers=num_threads) as executor:
             for i, video_url in enumerate(video_urls):
                 filename = os.path.join(download_path, f'00{i}.ts')
                 executor.submit(download_file, video_url, filename)
-    #concatenate_ts_files("./result", "output.mp4")
+
+    if len(video_urls) == len(os.listdir(download_path)):
+        concatenate_ts_files("./result", "output.mp4")
