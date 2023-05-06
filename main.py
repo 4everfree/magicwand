@@ -13,21 +13,28 @@ def read_m3u8_from_disk(file_path):
 
 def parse_m3u8(url):
     video_urls = []
-
     content = read_m3u8_from_disk(sys.argv[1])
+    content = content.splitlines()
+    return [line.strip() for line in content if line.strip() and not line.startswith('#')]
 
-    lines = content.splitlines()
-    for line in lines:
-        line = line.strip()
-        if not line.startswith('#') and line:
-            video_urls.append(line)
+def parse_m3u(url):
+    video_urls = []
+    with open(url, 'r') as f:
+        lines = f.readlines()
 
-    return video_urls
+    return [line.strip() for line in lines if line.strip() and not line.startswith('#')]
 
 def download_file(url, filename):
-    with urllib.request.urlopen(url) as response, open(filename, 'wb') as outfile:
-        outfile.write(response.read())
-    print(f'Файл {filename} успешно загружен.')
+    response = requests.get(url, stream=True)
+
+    if response.status_code == 200:
+        with open(filename, 'wb') as f:
+            for chunk in response.iter_content(chunk_size=8192):
+                if chunk:
+                    f.write(chunk)
+        print(f"Downloaded {filename}")
+    else:
+        print(f"Failed to download {filename}")
 
 
 def concatenate_ts_files(directory, output_filename):
@@ -43,7 +50,7 @@ def concatenate_ts_files(directory, output_filename):
 
 if __name__ == '__main__':
     if len(sys.argv) != 4:
-        print('Использование: python script.py <url> <количество потоков>')
+        print('Использование: python script.py <url> <количество потоков> <папка для загрузки>')
         sys.exit(1)
 
     m3u8_url = sys.argv[1]
@@ -55,28 +62,11 @@ if __name__ == '__main__':
         video_urls = []
         if(m3u8_url.endswith('m3u8')):
             video_urls = parse_m3u8(m3u8_url)
-            with ThreadPoolExecutor(max_workers=num_threads) as executor:
-                for i, video_url in enumerate(video_urls):
-                    filename = './' + f'00{i}.ts'
-                    executor.submit(download_file, video_url, filename)
         else:
-            with open(m3u8_url, 'r') as f:
-                lines = f.readlines()
+            video_urls = parse_m3u(m3u8_url)
 
-            urls = [line.strip() for line in lines if line.strip() and not line.startswith('#')]
-
-            for url in urls:
-                filename = os.path.basename(url)
-                filename = filename.split("?")[0]
-                output_file = os.path.join(download_path, filename)
-                response = requests.get(url, stream=True)
-
-                if response.status_code == 200:
-                    with open(output_file, 'wb') as f:
-                        for chunk in response.iter_content(chunk_size=8192):
-                            if chunk:
-                                f.write(chunk)
-                    print(f"Downloaded {filename}")
-                else:
-                    print(f"Failed to download {filename}")
-    concatenate_ts_files("./result", "output.mp4")
+        with ThreadPoolExecutor(max_workers=num_threads) as executor:
+            for i, video_url in enumerate(video_urls):
+                filename = os.path.join(download_path, f'00{i}.ts')
+                executor.submit(download_file, video_url, filename)
+    #concatenate_ts_files("./result", "output.mp4")
