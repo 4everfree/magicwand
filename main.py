@@ -48,14 +48,25 @@ def concatenate_ts_files(directory, output_filename):
     subprocess.run(["ffmpeg", "-f", "concat", "-safe", "0", "-i", "file_list.txt", "-c", "copy", output_filename])
     os.remove("file_list.txt")
 
-if __name__ == '__main__':
-    if len(sys.argv) != 4:
-        print('Использование: python script.py <url> <количество потоков> <папка для загрузки>')
-        sys.exit(1)
+def path(name):
+    name = name.split('.')[0]
+    return f'./{name}'
 
-    m3u8_url = sys.argv[1]
-    num_threads = int(sys.argv[2])
-    download_path = sys.argv[3]
+if __name__ == '__main__':
+    if len(sys.argv) == 3:
+        m3u8_url = sys.argv[1]
+        num_threads = int(sys.argv[2])
+        download_path = path(sys.argv[1])
+        ffmpeg_output_filename = f'{path(sys.argv[1])}.mp4'
+    elif len(sys.argv) != 5:
+        print('Использование: python script.py <url> <количество потоков> <папка для загрузки> <имя файла на выходе>')
+        sys.exit(1)
+    elif len(sys.argv) == 5:
+        m3u8_url = sys.argv[1]
+        num_threads = int(sys.argv[2])
+        download_path = sys.argv[3]
+        ffmpeg_output_filename = sys.argv[4]
+
     video_urls = []
 
     if (not os.path.exists(download_path)):
@@ -70,4 +81,4 @@ if __name__ == '__main__':
                 executor.submit(download_file, video_url, filename)
 
     if len(video_urls) == len(os.listdir(download_path)):
-        concatenate_ts_files("./result", "output.mp4")
+        concatenate_ts_files(download_path, ffmpeg_output_filename)
