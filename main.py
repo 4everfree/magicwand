@@ -12,16 +12,13 @@ def read_m3u8_from_disk(file_path):
     return content
 
 def parse_m3u8(url):
-    video_urls = []
     content = read_m3u8_from_disk(sys.argv[1])
     content = content.splitlines()
     return [line.strip() for line in content if line.strip() and not line.startswith('#')]
 
 def parse_m3u(url):
-    video_urls = []
     with open(url, 'r') as f:
         lines = f.readlines()
-
     return [line.strip() for line in lines if line.strip() and not line.startswith('#')]
 
 def download_file(url, filename):
@@ -58,14 +55,14 @@ if __name__ == '__main__':
         num_threads = int(sys.argv[2])
         download_path = path(sys.argv[1])
         ffmpeg_output_filename = f'{path(sys.argv[1])}.mp4'
-    elif len(sys.argv) != 5:
-        print('Использование: python script.py <url> <количество потоков> <папка для загрузки> <имя файла на выходе>')
-        sys.exit(1)
     elif len(sys.argv) == 5:
         m3u8_url = sys.argv[1]
         num_threads = int(sys.argv[2])
         download_path = sys.argv[3]
         ffmpeg_output_filename = sys.argv[4]
+    elif len(sys.argv) != 5:
+        print('Использование: python script.py <url> <количество потоков> <папка для загрузки> <имя файла на выходе>')
+        sys.exit(1)
 
     video_urls = []
 
